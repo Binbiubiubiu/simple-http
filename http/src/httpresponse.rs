@@ -13,9 +13,9 @@ pub struct HttpResponse<'a> {
 impl<'a> Default for HttpResponse<'a> {
     fn default() -> Self {
         Self {
-            version: "HTTP/1.1".into(),
-            status_code: "200".into(),
-            status_text: "OK".into(),
+            version: "HTTP/1.1",
+            status_code: "200",
+            status_text: "OK",
             headers: None,
             body: None,
         }
@@ -23,8 +23,8 @@ impl<'a> Default for HttpResponse<'a> {
 }
 
 impl<'a> From<HttpResponse<'a>> for String {
-    fn from(res:HttpResponse)->String {
-        let res1= res.clone();
+    fn from(res: HttpResponse) -> String {
+        let res1 = res.clone();
         format!(
             "{} {} {}\r\n{}Content-Length: {}\r\n\r\n{}",
             &res1.version(),
@@ -39,65 +39,65 @@ impl<'a> From<HttpResponse<'a>> for String {
 
 impl<'a> HttpResponse<'a> {
     pub fn new(
-        status_code:&'a str,
-        headers:Option<HashMap<&'a str,&'a str>>,
+        status_code: &'a str,
+        headers: Option<HashMap<&'a str, &'a str>>,
         body: Option<String>,
-    )-> HttpResponse<'a> {
-        let mut response:HttpResponse<'a> = HttpResponse::default();
+    ) -> HttpResponse<'a> {
+        let mut response: HttpResponse<'a> = HttpResponse::default();
         if status_code != "200" {
-            response.status_code = status_code.into();
+            response.status_code = status_code;
         };
         response.headers = match &headers {
-            Some(_h)=>headers,
+            Some(_h) => headers,
             None => {
                 let mut h = HashMap::new();
                 h.insert("Content-Type", "text/html");
                 Some(h)
             }
         };
-        response.status_text = match response.status_code{
-            "200" => "OK".into(),
-            "400" => "Bad Request".into(),
-            "404" => "Not Found".into(),
-            "500" => "Internal Server Error".into(),
-            _ => "Not Found".into(),
+        response.status_text = match response.status_code {
+            "200" => "OK",
+            "400" => "Bad Request",
+            "404" => "Not Found",
+            "500" => "Internal Server Error",
+            _ => "Not Found",
         };
 
         response.body = body;
         response
     }
 
-    pub fn send_response(&self,write_stream:&mut impl Write)->Result<()>{
-        let res =  self.clone();
-        let response_string:String = String::from(res);
-        let _ = write!(write_stream, "{}",response_string);
+    pub fn send_response(&self, write_stream: &mut impl Write) -> Result<()> {
+        let res = self.clone();
+        let response_string: String = String::from(res);
+        let _ = write!(write_stream, "{}", response_string);
 
         Ok(())
     }
 
-    fn version(&self)->&str{
+    fn version(&self) -> &str {
         self.version
     }
 
-    fn status_code(&self)->&str{
+    fn status_code(&self) -> &str {
         self.status_code
     }
 
-    fn status_text(&self)->&str{
+    fn status_text(&self) -> &str {
         self.status_text
     }
 
-    fn headers(&self)->String{
-        let map:HashMap<&str, &str> = self.headers.clone().unwrap();
-        let mut headers_string:String = "".into();
+    fn headers(&self) -> String {
+        let map: HashMap<&str, &str> = self.headers.clone().unwrap();
+        let mut headers_string: String = "".into();
         for (k, v) in map.iter() {
-            headers_string = format!("{}{}:{}\r\n",headers_string,k,v);
+            headers_string = format!("{}{}:{}\r\n", headers_string, k, v);
         }
         headers_string
     }
 
-    pub fn body(&self)->&str{
-        match &self.body{
+    pub fn body(&self) -> &str {
+        match &self.body {
             Some(b) => b.as_str(),
             None => "",
         }
@@ -110,40 +110,37 @@ mod tests {
 
     #[test]
     fn test_response_struct_creation_200() {
-        let response_actual = HttpResponse::new(
-            "200",
-            None,
-            Some("xxxx".into()),
-        );
-        let response_expected = HttpResponse{
+        let response_actual = HttpResponse::new("200", None, Some("xxxx".into()));
+        let response_expected = HttpResponse {
             version: "HTTP/1.1",
             status_code: "200",
             status_text: "OK",
-            headers:{
-                let mut h = HashMap::new();
-                h.insert("Content-Type", "text/html");
-                Some(h)
-            },
-            body:Some("xxxx".into()),
-        };
-        assert_eq!(response_actual, response_expected);
-    }
-
-    #[test]
-    fn test_http_response_creation() {
-        let response_expected = HttpResponse{
-            version:"HTTP/1.1",
-            status_code:"404",
-            status_text:"Not Found",
-            headers:{
+            headers: {
                 let mut h = HashMap::new();
                 h.insert("Content-Type", "text/html");
                 Some(h)
             },
             body: Some("xxxx".into()),
         };
-        let http_string:String = response_expected.into();
-        let actual_string = "HTTP/1.1 404 Not Found\r\nContent-Type:text/html\r\nContent-Length: 4\r\n\r\nxxxx";
+        assert_eq!(response_actual, response_expected);
+    }
+
+    #[test]
+    fn test_http_response_creation() {
+        let response_expected = HttpResponse {
+            version: "HTTP/1.1",
+            status_code: "404",
+            status_text: "Not Found",
+            headers: {
+                let mut h = HashMap::new();
+                h.insert("Content-Type", "text/html");
+                Some(h)
+            },
+            body: Some("xxxx".into()),
+        };
+        let http_string: String = response_expected.into();
+        let actual_string =
+            "HTTP/1.1 404 Not Found\r\nContent-Type:text/html\r\nContent-Length: 4\r\n\r\nxxxx";
         assert_eq!(http_string, actual_string);
     }
 }

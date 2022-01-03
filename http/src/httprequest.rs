@@ -17,7 +17,7 @@ impl From<&str> for Method {
     }
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Version {
     V1_1,
     V2_0,
@@ -25,29 +25,29 @@ pub enum Version {
 }
 
 impl From<&str> for Version {
-    fn from(s:&str)->Version {
-        match s{
-            "HTTP/1.1" =>Version::V1_1,
-            _=>Version::Uninitialized,
+    fn from(s: &str) -> Version {
+        match s {
+            "HTTP/1.1" => Version::V1_1,
+            _ => Version::Uninitialized,
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Resource{
+pub enum Resource {
     Path(String),
 }
 
 #[derive(Debug)]
-pub struct HttpRequest{
-    pub method:Method,
-    pub version:Version,
-    pub resource:Resource,
-    pub headers:HashMap<String, String>,
-    pub msg_body:String,
+pub struct HttpRequest {
+    pub method: Method,
+    pub version: Version,
+    pub resource: Resource,
+    pub headers: HashMap<String, String>,
+    pub msg_body: String,
 }
 
-impl From<String> for HttpRequest{
+impl From<String> for HttpRequest {
     fn from(s: String) -> Self {
         let mut parsed_method = Method::Uninitialized;
         let mut parsed_version = Version::V1_1;
@@ -55,33 +55,32 @@ impl From<String> for HttpRequest{
         let mut parsed_headers = HashMap::new();
         let mut parsed_msg_body = "";
 
-        for line in s.lines(){
-            if line.contains("HTTP"){
-                let (method,resource,version) = process_req_line(line);
+        for line in s.lines() {
+            if line.contains("HTTP") {
+                let (method, resource, version) = process_req_line(line);
                 parsed_method = method;
                 parsed_resource = resource;
                 parsed_version = version;
-            }else if line.contains(":") {
-                let (key,value) = process_header_line(line);
+            } else if line.contains(':') {
+                let (key, value) = process_header_line(line);
                 parsed_headers.insert(key, value);
-            }else if line.len() == 0 {
-
-            }else{
+            } else if line.is_empty() {
+            } else {
                 parsed_msg_body = line;
             }
         }
 
-        HttpRequest{
+        HttpRequest {
             method: parsed_method,
             version: parsed_version,
-            resource:parsed_resource,
+            resource: parsed_resource,
             headers: parsed_headers,
-            msg_body:parsed_msg_body.to_string(),
+            msg_body: parsed_msg_body.to_string(),
         }
     }
 }
 
-fn process_req_line(s:&str)->(Method,Resource,Version){
+fn process_req_line(s: &str) -> (Method, Resource, Version) {
     let mut words = s.split_whitespace();
     let method = words.next().unwrap();
     let resource = words.next().unwrap();
@@ -94,19 +93,19 @@ fn process_req_line(s:&str)->(Method,Resource,Version){
     )
 }
 
-fn process_header_line(s:&str)->(String,String){
-    let mut headers_items = s.split(":");
+fn process_header_line(s: &str) -> (String, String) {
+    let mut headers_items = s.split(':');
     let mut key = String::from("");
     let mut value = String::from("");
-    if let Some(k) = headers_items.next(){
+    if let Some(k) = headers_items.next() {
         key = k.to_string();
     }
-    if let Some(v) = headers_items.next(){
+    if let Some(v) = headers_items.next() {
         value = v.to_string();
     }
-    (key,value)
+    (key, value)
 }
- 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,22 +118,24 @@ mod tests {
 
     #[test]
     fn test_version_into() {
-        let v:Version = "HTTP/1.1".into();
+        let v: Version = "HTTP/1.1".into();
         assert_eq!(v, Version::V1_1);
     }
 
     #[test]
     fn test_read_http() {
-        let s:String = String::from("GET /greeting HTTP/1.1\r\nHost: localhost\r\nAccept: */*\r\nUser-Agent: curl/7.71.1");
+        let s: String = String::from(
+            "GET /greeting HTTP/1.1\r\nHost: localhost\r\nAccept: */*\r\nUser-Agent: curl/7.71.1",
+        );
         let mut headers_expected = HashMap::new();
-        headers_expected.insert("Host".into()," localhost".into());
-        headers_expected.insert("Accept".into()," */*".into());
-        headers_expected.insert("User-Agent".into()," curl/7.71.1".into());
+        headers_expected.insert("Host".into(), " localhost".into());
+        headers_expected.insert("Accept".into(), " */*".into());
+        headers_expected.insert("User-Agent".into(), " curl/7.71.1".into());
         let req: HttpRequest = s.into();
 
-        assert_eq!(Method::Get,req.method);
-        assert_eq!(Version::V1_1,req.version);
-        assert_eq!(Resource::Path("/greeting".to_string()),req.resource);
-        assert_eq!(headers_expected,req.headers);
+        assert_eq!(Method::Get, req.method);
+        assert_eq!(Version::V1_1, req.version);
+        assert_eq!(Resource::Path("/greeting".to_string()), req.resource);
+        assert_eq!(headers_expected, req.headers);
     }
 }
